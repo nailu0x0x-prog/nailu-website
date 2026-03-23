@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NaiLu Official - 観測所</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kaisei+Decol:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body, html {
+            margin: 0; padding: 0;
+            width: 100%; height: 100%;
+            background-color: #000510;
+            font-family: 'Kaisei Decol', serif;
+            overflow: hidden; color: white;
+        }
+        /* スクロールバーを非表示にする（機能は残したまま見た目だけ消す） */
+.main-board {
+    -ms-overflow-style: none;  /* IE, Edge用 */
+    scrollbar-width: none;     /* Firefox用 */
+}
+
+.main-board::-webkit-scrollbar {
+    display: none;             /* Chrome, Safari用 */
+}
+
+        #starfield { position: fixed; top: 0; left: 0; z-index: 1; }
+
+        .trail {
+            position: fixed; width: 8px; height: 8px; background: #87cefa;
+            border-radius: 50%; pointer-events: none; z-index: 100;
+            box-shadow: 0 0 10px #87cefa, 0 0 20px #87cefa;
+            transform: translate(-50%, -50%);
+        }
+
+        .page {
+            position: absolute; width: 100%; height: 100vh;
+            display: flex; justify-content: center; align-items: center;
+            transition: opacity 0.8s ease, transform 0.8s ease;
+            z-index: 10;
+            perspective: 1200px;
+        }
+
+        #main-page { opacity: 0; pointer-events: none; transform: translateY(30px); }
+        .fade-out { opacity: 0; transform: scale(1.1); pointer-events: none; }
+        .fade-in { opacity: 1 !important; pointer-events: auto !important; transform: translateY(0) !important; }
+/* 枠にカーソルを合わせた時の動き */
+.content-block div[style*="background"], 
+.content-block a[style*="background"] {
+    transition: all 0.3s ease !important; /* 動きをなめらかにする */
+}
+
+.content-block div[style*="background"]:hover,
+.content-block a[style*="background"]:hover {
+    transform: translateY(-5px); /* 5ピクセル上に浮く */
+    box-shadow: 0 10px 20px rgba(135, 206, 250, 0.2); /* 下に影をつけて浮遊感を出す */
+    background: rgba(255, 255, 255, 0.1) !important; /* 少しだけ明るくする */
+}
+        /* --- スタートカード --- */
+        .start-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(25px);
+            border: 1.5px solid rgba(135, 206, 250, 0.4);
+            border-radius: 40px; padding: 60px; text-align: center;
+            cursor: pointer;
+            box-shadow: 0 0 30px rgba(135, 206, 250, 0.1), 0 40px 100px rgba(0,0,0,0.8);
+            transform-style: preserve-3d;
+            transition: transform 0.15s ease-out, box-shadow 0.3s ease;
+            will-change: transform;
+        }
+
+        h1 {
+            font-size: 3.8rem; margin: 0; font-weight: 700;
+            background: linear-gradient(180deg, #FFFFFF 30%, #87cefa 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 15px rgba(135, 206, 250, 0.4));
+            transform: translateZ(50px);
+        }
+
+        .start-hint {
+            font-size: 0.8rem; letter-spacing: 0.5em; color: #87cefa;
+            margin-top: 30px; animation: blink 2s infinite;
+        }
+
+        @keyframes blink { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+
+        /* --- メインボード --- */
+        .main-board {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(25px);
+            border-radius: 30px; padding: 40px; width: 90%; max-width: 600px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+            overflow-y: auto; max-height: 85vh;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+
+        .main-visual {
+            width: 100%; border-radius: 20px; margin-bottom: 30px;
+            box-shadow: 0 0 20px rgba(135, 206, 250, 0.2);
+            background: rgba(0,0,0,0.2); overflow: hidden;
+        }
+
+        .main-visual img { width: 100%; display: block; }
+
+        .profile-section { text-align: left; padding: 0 10px; }
+        .profile-section h3 { color: #87cefa; border-bottom: 1px solid rgba(135,206,250,0.3); padding-bottom: 5px; }
+        .profile-section p { line-height: 1.6; margin: 15px 0; }
+        .profile-section ul { list-style: none; padding: 0; }
+        .profile-section li { margin-bottom: 8px; }
+        .profile-section li strong { color: #87cefa; margin-right: 10px; }
+
+        /* --- SNSボタン（すりガラス立体） --- */
+        .sns-container {
+            display: flex; justify-content: center; gap: 15px;
+            margin: 30px 0; perspective: 1000px;
+        }
+
+        .sns-button {
+            width: 80px; height: 50px;
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            display: flex; justify-content: center; align-items: center;
+            text-decoration: none; color: white; font-size: 0.8rem; font-weight: bold;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .sns-button:hover {
+            transform: translateZ(20px) translateY(-5px);
+            background: rgba(255, 255, 255, 0.15);
+            border-color: #87cefa;
+            box-shadow: 0 10px 20px rgba(135, 206, 250, 0.3);
+        }
+
+        .btn-yt:hover { color: #ffffff; }
+        .btn-cas:hover { color: #ffffff; }
+        .btn-x:hover { color: #ffffff; }
+
+        .return-button {
+            background: none; border: 1px solid rgba(255,255,255,0.2); color: white;
+            padding: 8px 25px; cursor: pointer; border-radius: 20px; transition: 0.3s;
+        }
+        .return-button:hover { border-color: #87cefa; color: #87cefa; }
+    </style>
+</head>
+<body>
+
+    <canvas id="starfield"></canvas>
+
+    <div id="start-page" class="page">
+        <div class="start-card" id="card" onclick="enterSite()">
+            <h1>ないる</h1>
+            <p style="opacity: 0.7; margin-top: 10px; letter-spacing: 0.2em;">OBSERVATION STATION</p>
+            <div class="start-hint">CLICK TO START</div>
+        </div>
+    </div>
+
+    <div id="main-page" class="page">
+        <div class="main-board">
+            <div class="main-visual">
+                <img src="/Users/suharayuiko/Downloads/無題1957.png" alt="Visual">
+            </div>
+
+            <div class="profile-section">
+                <h3>PROFILE</h3>
+                <p>
+                    みんなの光になりたいな！<br>
+                    15歳のクリエイター系Vtuber！<br>
+            
+                </p>
+                <ul>
+                    <li><strong>Name</strong> ないる</li>
+                    <li><strong>Age</strong> 15</li>
+                    <li><strong>Birthday</strong> 4/16</li>
+                    <li><strong>Hobby</strong> 映像、デザイン制作</li>
+                </ul>
+            </div>
+
+            <div class="sns-container">
+                <a href="https://www.youtube.com/@Nailu-ch" target="_blank" class="sns-button btn-yt">YouTube</a>
+                <a href="https://twitcasting.tv/g:102965572127691748561" target="_blank" class="sns-button btn-cas">ツイキャス</a>
+                <a href="https://twitter.com/Nailu_x_x_" target="_blank" class="sns-button btn-x">X</a>
+            </div>
+
+       <div class="content-block" style="max-width: 400px; margin: 30px auto 0 auto; padding: 20px; background: rgba(135, 206, 250, 0.1); border: 1px solid rgba(135, 206, 250, 0.3); border-radius: 20px; text-align: center;">
+    <span style="background: #87cefa; color: #001233; padding: 2px 10px; border-radius: 10px; font-size: 0.7rem; font-weight: bold;">IMPORTANT</span>
+    <h3 style="margin: 10px 0; font-size: 1.1rem;">✨ 重大発表あります！ ✨</h3>
+    <p style="font-size: 0.85rem; opacity: 0.8; line-height: 1.6;">
+        今夜21時から、新衣装の公開配信！<br>
+        最高の観測日和になるにょ🌌✨
+    </p>
+    <a href="https://x.com/Nailu_x_x_/status/2035154563674865872?s=20" target="_blank" style="color: #87cefa; font-size: 0.8rem; text-decoration: none; border-bottom: 1px solid #87cefa;">
+        👉 ポスト本編を見に行く
+    </a>
+</div>
+            <div class="content-block" style="max-width: 400px; margin: 30px auto 0 auto; padding-top: 20px; border-top: 1px dashed rgba(255,255,255,0.1);">
+    <h3 style="color: #87cefa; border-bottom: 1px solid rgba(135,206,250,0.3); padding-bottom: 5px; font-size: 1.1rem; text-align: center; margin-top: 0; letter-spacing: 0.2em;">WEEKLY SCHEDULE</h3>
+    
+    <div style="display: grid; gap: 6px; margin-top: 15px;">
+        <div style="background: rgba(255,255,255,0.03); padding: 6px 15px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.05);">
+            <span style="font-weight: bold; color: #87cefa; font-size: 0.8rem;">MON</span>
+            <span style="font-size: 0.8rem;">21:00 ~ 歌枠</span>
+        </div>
+        <div style="background: rgba(255,255,255,0.03); padding: 6px 15px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.05);">
+            <span style="font-weight: bold; color: #87cefa; font-size: 0.8rem;">TUE</span>
+            <span style="font-size: 0.8rem;">22:00 ~ 雑談</span>
+        </div>
+        <div style="background: rgba(255,255,255,0.03); padding: 6px 15px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.05);">
+            <span style="font-weight: bold; color: #87cefa; font-size: 0.8rem;">WED</span>
+            <span style="font-size: 0.8rem;">OFF</span>
+        </div>
+        <div style="background: rgba(255,255,255,0.03); padding: 6px 15px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.05);">
+            <span style="font-weight: bold; color: #87cefa; font-size: 0.8rem;">THU</span>
+            <span style="font-size: 0.8rem;">21:00 ~ ゲーム</span>
+        </div>
+        <div style="background: rgba(255,255,255,0.03); padding: 6px 15px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.05);">
+            <span style="font-weight: bold; color: #87cefa; font-size: 0.8rem;">FRI</span>
+            <span style="font-size: 0.8rem;">23:00 ~ 深夜徘徊</span>
+        </div>
+        <div style="background: rgba(255,255,255,0.03); padding: 6px 15px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.05);">
+            <span style="font-weight: bold; color: #87cefa; font-size: 0.8rem;">SAT</span>
+            <span style="font-size: 0.8rem;">20:00 ~ 企画枠！</span>
+        </div>
+        <div style="background: rgba(255,255,255,0.03); padding: 6px 15px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.05);">
+            <span style="font-weight: bold; color: #87cefa; font-size: 0.8rem;">SUN</span>
+            <span style="font-size: 0.8rem;">21:00 ~ 振り返り</span>
+        </div>
+    </div>
+    
+    <p style="text-align: center; font-size: 0.6rem; opacity: 0.4; margin-top: 15px; letter-spacing: 0.1em;">
+        ※ SCHEDULE MAY CHANGE
+    </p>
+    
+</div>
+<div class="content-block" style="max-width: 400px; margin: 30px auto 0 auto; padding-top: 20px; border-top: 1px dashed rgba(255,255,255,0.1);">
+    <h3 style="color: #87cefa; border-bottom: 1px solid rgba(135,206,250,0.3); padding-bottom: 5px; font-size: 1.1rem; text-align: center; margin-top: 0; letter-spacing: 0.2em;">TAGS</h3>
+    
+    <div style="margin-top: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        
+        <div style="background: rgba(135, 206, 250, 0.05); border: 1px solid rgba(135, 206, 250, 0.2); padding: 10px; border-radius: 12px; text-align: center;">
+            <div style="font-size: 0.6rem; color: #87cefa; margin-bottom: 2px;">ALL / MESSAGE</div>
+            <div style="font-size: 0.85rem; font-weight: bold;">#ないる宛て</div>
+        </div>
+
+        <div style="background: rgba(135, 206, 250, 0.05); border: 1px solid rgba(135, 206, 250, 0.2); padding: 10px; border-radius: 12px; text-align: center;">
+            <div style="font-size: 0.6rem; color: #87cefa; margin-bottom: 2px;">FAN ART</div>
+            <div style="font-size: 0.85rem; font-weight: bold;">#ないるのアトリエ</div>
+        </div>
+
+        <div style="background: rgba(135, 206, 250, 0.03); border: 1px solid rgba(255, 255, 255, 0.05); padding: 10px; border-radius: 12px; text-align: center;">
+            <div style="font-size: 0.6rem; opacity: 0.6; margin-bottom: 2px;">STREAM</div>
+            <div style="font-size: 0.85rem; font-weight: bold;">#ないる観測無線</div>
+        </div>
+
+        <div style="background: rgba(135, 206, 250, 0.03); border: 1px solid rgba(255, 255, 255, 0.05); padding: 10px; border-radius: 12px; text-align: center;">
+            <div style="font-size: 0.6rem; opacity: 0.6; margin-bottom: 2px;">REACTION</div>
+            <div style="font-size: 0.85rem; font-weight: bold;">#ないる観測レポ</div>
+        </div>
+
+        <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); padding: 10px; border-radius: 12px; text-align: center;">
+            <div style="font-size: 0.6rem; opacity: 0.6; margin-bottom: 2px;">FAN NAME</div>
+            <div style="font-size: 0.85rem; font-weight: bold;">観測者</div>
+        </div>
+
+        <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); padding: 10px; border-radius: 12px; text-align: center;">
+            <div style="font-size: 0.6rem; opacity: 0.6; margin-bottom: 2px;">FAN MARK</div>
+            <div style="font-size: 1.1rem;">🌌✨</div>
+        </div>
+
+    </div>
+
+    <p style="text-align: center; font-size: 0.6rem; opacity: 0.4; margin-top: 15px; letter-spacing: 0.05em; line-height: 1.5;">
+        タグでポストしてくれたら、<br>ないるが見に行くよ！
+
+</div>
+    </p>
+<div class="content-block" style="max-width: 400px; margin: 30px auto 0 auto; padding-top: 20px; border-top: 1px dashed rgba(255,255,255,0.1);">
+                <h3 style="color: #87cefa; border-bottom: 1px solid rgba(135,206,250,0.3); padding-bottom: 5px; font-size: 1.1rem; text-align: center; margin-top: 0; letter-spacing: 0.2em;">SEND MESSAGE</h3>
+                
+                <div style="margin-top: 20px; text-align: center;">
+                    <p style="font-size: 0.8rem; opacity: 0.7; margin-bottom: 15px; line-height: 1.6;">
+                        観測所から、ないるへメッセージを届けよう！<br>
+                    </p>
+                    
+                    <a href="https://marshmallow-qa.com/kgvcahhxd1ugjj0?t=fG3XOQ&utm_medium=url_text&utm_source=promotion" target="_blank" style="display: inline-block; padding: 12px 30px; background: linear-gradient(45deg, rgba(135,206,250,0.2), rgba(255,255,255,0.1)); border: 1px solid rgba(135,206,250,0.5); border-radius: 30px; color: #87cefa; text-decoration: none; font-weight: bold; font-size: 0.9rem; letter-spacing: 0.1em; box-shadow: 0 0 15px rgba(135, 206, 250, 0.2); transition: all 0.3s ease;">
+                        🌌メッセージを送る✨
+                    </a>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin-top: 40px; padding-bottom: 20px;">
+                <button onclick="location.reload()" class="return-button">
+                    <span style="opacity: 0.6; font-size: 0.8rem; margin-right: 5px;">←</span> 戻る
+                </button>
+            </div>
+            </div> </div> ```
+
+    <script>
+        function enterSite() {
+            document.getElementById('start-page').classList.add('fade-out');
+            setTimeout(() => { document.getElementById('main-page').classList.add('fade-in'); }, 400);
+        }
+
+        const canvas = document.getElementById('starfield');
+        const ctx = canvas.getContext('2d');
+        let stars = [];
+        function initStars() {
+            canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+            stars = [];
+            for (let i = 0; i < 200; i++) {
+                stars.push({ x: Math.random()*canvas.width, y: Math.random()*canvas.height, size: Math.random()*1.5, opacity: Math.random(), speed: Math.random()*0.01+0.005 });
+            }
+        }
+        const dots = [];
+        const mouse = { x: window.innerWidth/2, y: window.innerHeight/2 };
+        for (let i = 0; i < 10; i++) {
+            const el = document.createElement('div'); el.className = 'trail';
+            document.body.appendChild(el); dots.push({ el, x: mouse.x, y: mouse.y });
+        }
+        window.addEventListener('mousemove', e => {
+            mouse.x = e.clientX; mouse.y = e.clientY;
+            const card = document.getElementById('card');
+            if(card) {
+                const rect = card.getBoundingClientRect();
+                const rotateX = (rect.top + rect.height/2 - e.clientY) / 15;
+                const rotateY = (e.clientX - (rect.left + rect.width/2)) / 15;
+                card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+            }
+        });
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            stars.forEach(s => { s.opacity += s.speed; if (s.opacity > 1 || s.opacity < 0.1) s.speed *= -1; ctx.fillStyle = `rgba(255, 255, 255, ${Math.abs(s.opacity)})`; ctx.beginPath(); ctx.arc(s.x, s.y, s.size, 0, Math.PI*2); ctx.fill(); });
+            let nextX = mouse.x, nextY = mouse.y;
+            dots.forEach((dot, index) => { dot.x += (nextX - dot.x) * 0.35; dot.y += (nextY - dot.y) * 0.35; dot.el.style.left = dot.x + 'px'; dot.el.style.top = dot.y + 'px'; dot.el.style.opacity = 1 - (index / 10); dot.el.style.transform = `translate(-50%, -50%) scale(${1 - index/10})`; nextX = dot.x; nextY = dot.y; });
+            requestAnimationFrame(animate);
+        }
+        window.addEventListener('resize', initStars);
+        initStars(); animate();
+    </script>
+</body>
+</html>
+
